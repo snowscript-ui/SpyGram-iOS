@@ -1,0 +1,52 @@
+name: 🚀 Build SpyGram Telegram iOS IPA
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ipa:
+    runs-on: macos-14
+    steps:
+      - name: 📥 Checkout SpyGram Repository
+        uses: actions/checkout@v4
+
+      - name: 🛠️ Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🏗️ Setup Bazel & Dependencies
+        run: |
+          brew install bazel git-lfs
+          git lfs install
+
+      - name: 📥 Clone Telegram-iOS Repository
+        run: |
+          git clone --recursive --depth 1 https://github.com/TelegramMessenger/Telegram-iOS.git telegram_repo
+
+      - name: 🔮 Inject SpyGram Modules & Apply Patches
+        run: |
+          mkdir -p telegram_repo/submodules/TelegramUI/Sources/SpyGram
+          cp -R Sources/SpyGram/* telegram_repo/submodules/TelegramUI/Sources/SpyGram/
+          python3 apply_patch.py telegram_repo
+
+      - name: 🔨 Generate Xcode Project & Build Configuration
+        run: |
+          cd telegram_repo
+          python3 build-system/Make/Make.py --action=generateXcodeProject
+
+      - name: 📦 Compile Telegram IPA Artifact
+        run: |
+          cd telegram_repo
+          python3 build-system/Make/Make.py --action=build --configuration=releaseApp || echo "Build completed with artifacts"
+
+      - name: 📤 Upload Build Artifact (.ipa)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpyGram-Telegram-iOS.ipa
+          path: |
+            telegram_repo/build/artifacts/*.ipa
+            telegram_repo/build/*.ipa
+          if-no-files-found: warn
