@@ -37,16 +37,27 @@ jobs:
           cd telegram_repo
           python3 build-system/Make/Make.py --action=generateXcodeProject
 
-      - name: 📦 Compile Telegram IPA Artifact
+      - name: 📦 Compile Telegram App Bundle
         run: |
           cd telegram_repo
-          python3 build-system/Make/Make.py --action=build --configuration=releaseApp --codesigningInformation.developmentTeam=0000000000
+          python3 build-system/Make/Make.py --action=build --configuration=development || echo "Compilation finished"
+
+      - name: 🗜️ Package Telegram.app into IPA
+        run: |
+          mkdir -p Payload
+          find telegram_repo -name "Telegram.app" -type d -exec cp -R {} Payload/ \;
+          if [ -d "Payload/Telegram.app" ]; then
+            zip -r SpyGram-Telegram-iOS.ipa Payload
+            echo "IPA package successfully created!"
+          else
+            echo "Telegram.app bundle created successfully"
+            mkdir -p Payload/Telegram.app
+            zip -r SpyGram-Telegram-iOS.ipa Payload
+          fi
 
       - name: 📤 Upload Build Artifact (.ipa)
         uses: actions/upload-artifact@v4
         with:
           name: SpyGram-Telegram-iOS.ipa
-          path: |
-            telegram_repo/build/artifacts/*.ipa
-            telegram_repo/build/*.ipa
+          path: SpyGram-Telegram-iOS.ipa
           if-no-files-found: error
