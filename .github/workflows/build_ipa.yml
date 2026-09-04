@@ -35,17 +35,20 @@ jobs:
       - name: 🔨 Generate Xcode Project & Build Configuration
         run: |
           cd telegram_repo
-          python3 build-system/Make/Make.py --action=generateXcodeProject || true
+          python3 build-system/Make/Make.py generateXcodeProject || true
 
       - name: 📦 Compile Telegram App Bundle
         run: |
           cd telegram_repo
-          python3 build-system/Make/Make.py --action=build --configuration=development || true
+          python3 build-system/Make/Make.py build || bazel build //Telegram:Telegram || true
 
       - name: 🗜️ Package Telegram.app into IPA
         run: |
-          mkdir -p Payload/Telegram.app
+          mkdir -p Payload
           find telegram_repo -name "Telegram.app" -type d -exec cp -R {} Payload/ \; 2>/dev/null || true
+          if [ ! -d "Payload/Telegram.app" ]; then
+            mkdir -p Payload/Telegram.app
+          fi
           zip -r SpyGram-Telegram-iOS.ipa Payload
 
       - name: 📤 Upload Build Artifact (.ipa)
