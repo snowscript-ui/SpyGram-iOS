@@ -35,12 +35,12 @@ jobs:
       - name: 🔨 Generate Xcode Project & Build Configuration
         run: |
           cd telegram_repo
-          python3 build-system/Make/Make.py --action=generateXcodeProject || echo "Configured"
+          python3 build-system/Make/Make.py --action=generateXcodeProject
 
       - name: 📦 Compile Telegram IPA Artifact
         run: |
           cd telegram_repo
-          python3 build-system/Make/Make.py --action=build --configuration=releaseApp || echo "Build finished"
+          python3 build-system/Make/Make.py --action=build --configuration=releaseApp --codesigningInformation.developmentTeam=0000000000
 
       - name: 📤 Upload Build Artifact (.ipa)
         uses: actions/upload-artifact@v4
@@ -49,4 +49,4 @@ jobs:
           path: |
             telegram_repo/build/artifacts/*.ipa
             telegram_repo/build/*.ipa
-          if-no-files-found: warn
+          if-no-files-found: error
